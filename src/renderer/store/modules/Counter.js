@@ -24,6 +24,10 @@ const mutations = {
     state.tabmesArr.push(tab)
     state.tabKey = state.tabmesArr.length - 1
   },
+  changemesname (state, data) {
+    state.tabmesArr[data.key].name = data.name
+    state.tabmesArr[data.key].allname = data.allname
+  },
   delTab (state, key) {
     if (key <= state.tabKey) {
       state.tabKey = state.tabKey - 1

@@ -17,16 +17,16 @@
 
 <script>
   import { ipcRenderer } from 'electron'
-  import { changeMousePos, computeChoose } from '../util/compute'
+  import { changeMousePos, computeChoose, getChoosedContent, pasteText, clearChoosed, clearchoosedCon } from '../util/compute'
 
   export default {
     name: 'editArea',
-    props: ['menuWid', 'tabh', 'txt', 'pos', 'id', 'ctab'],
+    props: ['menuWid', 'tabh', 'txt', 'pos', 'id', 'ctab', 'copydata', 'editstate'],
     data () {
       return {
         valArr: [''],
         line: 0,
-        cursorShow: true,
+        cursorShow: false,
         cursorXpos: 0,
         tlpos: 0,
         thpos: 0,
@@ -37,14 +37,18 @@
         choosedlefts: [0],
         choosedwids: [0],
         chooseState: false,
+        ischoosed: false,
         choosestartxPos: 0,
         choosestartyPos: 0,
-        bug: false
+        chooseendxPos: 0,
+        chooseendyPos: 0,
+        bug: false /* 解决mouseup与click冲突的bug */
       }
     },
     mounted () {
       let xnum = 0
       let ynum = -1
+      this.editing = this.editstate
       document.addEventListener('mousemove', (e) => {
         e.preventDefault()
       })
@@ -75,6 +79,7 @@
         if (xnum === linenum) {
           this.computeState = false
           this.$store.commit('initEnd', this.id)
+          this.edited.pop()
           console.log(this.edited)
           clearInterval(initEdit)
         } else {
@@ -95,12 +100,10 @@
     methods: {
       readyEdit (e) {
         if (this.bug) {
-          this.choosedwids = this.choosedwids.map(() => {
-            return 0
-          })
-          this.choosedlefts = this.choosedlefts.map(() => {
-            return 0
-          })
+          this.ischoosed = false /* 点击会取消选择 */
+          let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+          this.choosedlefts = cleardata.choosels
+          this.choosedwids = cleardata.choosews
         }
         if (e.target === this.$refs.ani) return ''
         let posX = e.clientX - this.menuWid - 30
@@ -118,9 +121,46 @@
       write (e) {
         e.preventDefault()
         let key = e.keyCode
+        /* 复制功能 */
+        if (key === 67 && e.ctrlKey && (e.key >= 'a' && e.key <= 'z')) {
+          if (this.ischoosed) {
+            let chooseddata = getChoosedContent(this.choosestartxPos, this.choosestartyPos, this.chooseendxPos, this.chooseendyPos, this.valArr, this.edited)
+            this.$emit('copyEvent', chooseddata)
+          }
+          return ''
+        }
+        /* 粘贴功能 */
+        if (key === 86 && e.ctrlKey && (e.key >= 'a' && e.key <= 'z')) {
+          if (this.ischoosed) {
+            let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+            this.choosedlefts = cleardata.choosels
+            this.choosedwids = cleardata.choosews
+            this.ischoosed = false
+            return ''
+          }
+          if (this.copydata.iscopy) {
+            this.editing = true
+            let copytxt = this.copydata.copytxt.split(/[\n\r]/)
+            let copyEdited = this.copydata.copyEdited
+            pasteText(this.cursorXpos, this.line, copytxt, this.valArr, copyEdited, this.edited)
+            this.$emit('changeEdit', { key: this.id, state: this.editing })
+          }
+          return ''
+        }
         /* 字符与数字键 */
         if ((key >= 65 && key <= 90) || (key >= 48 && key <= 57) || key === 32 || key === 13 || (key >= 219 && key <= 220) || (key >= 186 && key <= 191)) {
           this.editing = true
+          if (this.ischoosed) {
+            let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+            this.choosedlefts = cleardata.choosels
+            this.choosedwids = cleardata.choosews
+            let newpos = clearchoosedCon(this.choosestartxPos, this.choosestartyPos, this.chooseendxPos, this.chooseendyPos, this.edited, this.valArr)
+            this.cursorXpos = newpos.leftx
+            this.line = newpos.lefty
+            this.tlpos = this.edited[this.line][this.cursorXpos]
+            this.thpos = this.line * 20
+            this.ischoosed = false
+          }
           if (key === 13) {
             let newlinetxt = this.valArr[this.line].slice(this.cursorXpos)
             let newlineedited = this.edited[this.line].slice(this.cursorXpos + 1)
@@ -163,6 +203,18 @@
         if (key === 8) {
           this.editing = true
           if (this.cursorXpos === 0 && this.line === 0) return ''
+          if (this.ischoosed) {
+            let newpos = clearchoosedCon(this.choosestartxPos, this.choosestartyPos, this.chooseendxPos, this.chooseendyPos, this.edited, this.valArr)
+            this.cursorXpos = newpos.leftx
+            this.line = newpos.lefty
+            this.tlpos = this.edited[this.line][this.cursorXpos]
+            this.thpos = this.line * 20
+            let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+            this.choosedlefts = cleardata.choosels
+            this.choosedwids = cleardata.choosews
+            this.ischoosed = false
+            return ''
+          }
           if (this.cursorXpos === 0) {
             let txt = this.valArr[this.line]
             let edited = this.edited[this.line]
@@ -212,6 +264,9 @@
         }
         /* 左移键 */
         if (key === 37) {
+          let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+          this.choosedlefts = cleardata.choosels
+          this.choosedwids = cleardata.choosews
           this.editing = true
           if (this.cursorXpos === 0) {
             if (this.line === 0) return ''
@@ -226,6 +281,9 @@
         }
         /* 上移键 */
         if (key === 38) {
+          let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+          this.choosedlefts = cleardata.choosels
+          this.choosedwids = cleardata.choosews
           this.editing = true
           if (this.line === 0) return ''
           this.line--
@@ -235,6 +293,9 @@
         }
         /* 右移键 */
         if (key === 39) {
+          let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+          this.choosedlefts = cleardata.choosels
+          this.choosedwids = cleardata.choosews
           this.editing = true
           if (this.cursorXpos === this.edited[this.line].length - 1) {
             if (this.line === this.edited.length - 1) return ''
@@ -249,6 +310,9 @@
         }
         /* 下移键 */
         if (key === 40) {
+          let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
+          this.choosedlefts = cleardata.choosels
+          this.choosedwids = cleardata.choosews
           this.editing = true
           if (this.line === this.edited.length - 1) return ''
           this.line++
@@ -258,6 +322,7 @@
         }
         this.$emit('changeEdit', { key: this.id, state: this.editing })
       },
+      /* 选择要复制的字符 */
       chooseframeshow (e) {
         if (!this.chooseState) return ''
         let posX = e.clientX - this.menuWid - 30
@@ -269,6 +334,8 @@
         this.thpos = data.gridy * 20
         this.line = data.gridy
         this.cursorXpos = data.cursorXpos
+        this.chooseendxPos = data.cursorXpos
+        this.chooseendyPos = data.gridy
         let oldpos = {}
         let newpos = {}
         oldpos.x = this.choosestartxPos
@@ -280,6 +347,7 @@
         let returnState = computeChoose(oldpos, newpos, this.edited, this.choosedlefts, this.choosedwids, chooselater)
         this.choosedlefts = returnState.choosedlefts
         this.choosedwids = returnState.choosedwids
+        this.ischoosed = true /* 表明有选择的内容 */
       },
       choosestart (e) {
         this.choosedwids = this.choosedwids.map(() => {

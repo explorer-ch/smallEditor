@@ -63,10 +63,14 @@ function dfsFile (path, map) {
 }
 
 const template = [{
-  label: 'file',
+  label: 'File',
   submenu: [
-    { label: 'new File' },
-    { label: 'open File',
+    { label: 'New File',
+      click () {
+        mainWindow.webContents.send('newfile')
+      }
+    },
+    { label: 'Open File',
       click () {
         let filenames = dialog.showOpenDialog({
           properties: ['openFile']
@@ -87,13 +91,13 @@ const template = [{
         })
       }
     },
-    { label: 'save',
+    { label: 'Save',
       click () {
         mainWindow.webContents.send('savefile')
       }
     },
     {
-      label: 'new folders',
+      label: 'New Folders',
       click () {
         let map = {}
         let filebox = dialog.showOpenDialog({
@@ -128,6 +132,14 @@ ipcMain.on('reqRead', (event, path) => {
 })
 ipcMain.on('writefile', (event, mess) => {
   if (mess) {
-    fs.writeFileSync(mess.path, mess.data)
+    if (mess.path === '') {
+      let filename = dialog.showSaveDialog({
+        securityScopedBookmarks: true
+      })
+      fs.writeFileSync(filename, mess.data)
+      mainWindow.webContents.send('changemes', filename)
+    } else {
+      fs.writeFileSync(mess.path, mess.data)
+    }
   }
 })
