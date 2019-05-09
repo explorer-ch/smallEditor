@@ -1,28 +1,13 @@
-# samlleditor
+### smallEditor
 
-> An electron-vue project
+这是用electron-vue写的一个文本编辑器，样式仿照sublime text，持续更新~~
 
-#### Build Setup
+####已完成的功能:
++基本编辑功能
++读取文件
++保存文件
++显示文件夹目录
 
-``` bash
-# install dependencies
-npm install
-
-# serve with hot reload at localhost:9080
-npm run dev
-
-# build electron application for production
-npm run build
-
-# run unit & end-to-end tests
-npm test
+项目下载后npm run dev可查看效果，npm run build可打包成.exe文件运行
 
 
-# lint all JS/Vue component files in `src/`
-npm run lint
-
-```
-
----
-
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue)@[8fae476](https://github.com/SimulatedGREG/electron-vue/tree/8fae4763e9d225d3691b627e83b9e09b56f6c935) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).

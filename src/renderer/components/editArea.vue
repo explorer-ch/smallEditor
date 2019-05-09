@@ -6,7 +6,7 @@
     <div class="lineNums">
       <span class="lineNum" v-for="(val,index) in valArr" :key="index" :style="{'color':index==line?'white':'rgba(255,255,255,0.3)'}">{{index+1}}</span>
     </div>
-    <div class="textArea" @mousedown="choosestart" @mousemove="chooseframeshow" @mouseup="chooseend">
+    <div class="textArea" @mousedown="choosestart" @mousemove="chooseframeshow" @mouseup="chooseend" v-light="ast">
       <div class="choosedframe" v-for="(val,index) in choosedlefts" :key="index+'frame'" :style="{top:index*20+'px',left:choosedlefts[index]+'px',width:choosedwids[index]+'px'}"></div>
       <pre class="textCon" v-for="(val,index) in valArr" :key="index">{{val}}</pre>
       <pre class="measureTool" ref="tool">{{charBlock}}</pre> <!--辅助测量字符宽度-->
@@ -18,6 +18,8 @@
 <script>
   import { ipcRenderer } from 'electron'
   import { changeMousePos, computeChoose, getChoosedContent, pasteText, clearChoosed, clearchoosedCon } from '../util/compute'
+  import { getAst } from '../util/getAst'
+  import '../css/highLight.css'
 
   export default {
     name: 'editArea',
@@ -42,7 +44,13 @@
         choosestartyPos: 0,
         chooseendxPos: 0,
         chooseendyPos: 0,
-        bug: false /* 解决mouseup与click冲突的bug */
+        bug: false, /* 解决mouseup与click冲突的bug */
+        ast: null
+      }
+    },
+    computed: {
+      filetype () {
+        return this.id.split('.').slice(-1)[0]
       }
     },
     mounted () {
@@ -74,13 +82,13 @@
         this.choosedwids.push(0)
         this.choosedlefts.push(0)
       }
+      this.ast = getAst(this.txt, this.filetype) /* 语法高亮 */
       /* 计算edited */
       let initEdit = setInterval(() => {
         if (xnum === linenum) {
           this.computeState = false
           this.$store.commit('initEnd', this.id)
           this.edited.pop()
-          console.log(this.edited)
           clearInterval(initEdit)
         } else {
           if (ynum !== -1) {
