@@ -67,6 +67,7 @@
     display:flex;
     flex-direction:row;
     float:left;
+    position:relative;
   }
   .folder{
     flex:1;
@@ -79,7 +80,8 @@
     width:3px;
     height:100%;
     cursor:e-resize;
-    float:right;
+    position:absolute;
+    right:0px;
   }
 </style>
 

@@ -75,6 +75,15 @@
           this.$emit('write', messobj)
         }
       })
+      ipcRenderer.on('markdownView', (event) => {
+        if (this.id === this.ctab && this.filetype === 'md') {
+          let mess = ''
+          for (let i = 0; i < this.valArr.length; i++) {
+            mess += this.valArr[i] + '\n'
+          }
+          ipcRenderer.send('markdownTransform', mess)
+        }
+      })
       this.$refs.editArea.focus()
       this.valArr = this.txt.split(/[\n\r]/)
       let linenum = this.valArr.length
@@ -156,7 +165,7 @@
           return ''
         }
         /* 字符与数字键 */
-        if ((key >= 65 && key <= 90) || (key >= 48 && key <= 57) || key === 32 || key === 13 || (key >= 219 && key <= 220) || (key >= 186 && key <= 191)) {
+        if ((key >= 65 && key <= 90) || (key >= 48 && key <= 57) || key === 32 || key === 13 || (key >= 219 && key <= 221) || (key >= 186 && key <= 191)) {
           this.editing = true
           if (this.ischoosed) {
             let cleardata = clearChoosed(this.choosedlefts, this.choosedwids)
@@ -329,6 +338,13 @@
           this.thpos += 20
         }
         this.$emit('changeEdit', { key: this.id, state: this.editing })
+        if (this.filetype === 'md') {
+          let md = ''
+          this.valArr.map((txt) => {
+            md += txt + '\n'
+          })
+          this.$emit('updatePre', md)
+        }
       },
       /* 选择要复制的字符 */
       chooseframeshow (e) {

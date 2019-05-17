@@ -2,6 +2,7 @@
 
 import { app, BrowserWindow, Menu, dialog, ipcMain } from 'electron'
 import fs from 'fs'
+import markdown from 'markdown'
 
 /**
  * Set `__static` path to static files in production
@@ -113,6 +114,17 @@ const template = [{
       }
     }
   ]
+},
+{
+  label: 'preview',
+  submenu: [
+    {
+      label: 'markdown',
+      click () {
+        mainWindow.webContents.send('markdownView')
+      }
+    }
+  ]
 }]
 
 const menu = Menu.buildFromTemplate(template)
@@ -141,5 +153,11 @@ ipcMain.on('writefile', (event, mess) => {
     } else {
       fs.writeFileSync(mess.path, mess.data)
     }
+  }
+})
+ipcMain.on('markdownTransform', (event, mess) => {
+  if (mess) {
+    let htmlmess = markdown.markdown.toHTML(mess)
+    mainWindow.webContents.send('getHtml', htmlmess)
   }
 })
