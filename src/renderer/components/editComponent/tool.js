@@ -1,3 +1,11 @@
+export function getlinetxt (txts) {
+  let linetxt = ''
+  txts.forEach((txt) => {
+    linetxt += txt.val
+  })
+  return linetxt
+}
+
 export function changeMousePos (mousex, mousey, grid) {
   let gridx = 0
   let cursorXpos = 0
@@ -104,7 +112,7 @@ export function getChoosedContent (startx, starty, endx, endy, chars, edited) {
   let chooseedited = []
   if (starty === endy) {
     if (startx < endx) {
-      choosetxt += chars[starty].slice(startx, endx)
+      choosetxt += getlinetxt(chars[starty]).slice(startx, endx)
       let cedit = edited[starty].slice(startx + 1, endx + 1)
       let left = edited[starty][startx]
       cedit = cedit.map((item) => {
@@ -112,7 +120,7 @@ export function getChoosedContent (startx, starty, endx, endy, chars, edited) {
       })
       chooseedited.push(cedit)
     } else {
-      choosetxt += chars[starty].slice(endx, startx)
+      choosetxt += getlinetxt(chars[starty]).slice(endx, startx)
       let cedit = edited[starty].slice(endx + 1, startx + 1)
       let left = edited[starty][endx]
       cedit = cedit.map((item) => {
@@ -135,7 +143,7 @@ export function getChoosedContent (startx, starty, endx, endy, chars, edited) {
     }
     for (let i = lefty; i < righty + 1; i++) {
       if (i === lefty) {
-        choosetxt += chars[i].slice(leftx) + '\n'
+        choosetxt += getlinetxt(chars[i]).slice(leftx) + '\n'
         cedit = edited[i].slice(leftx + 1)
         left = edited[i][leftx]
         cedit = cedit.map((item) => {
@@ -143,7 +151,7 @@ export function getChoosedContent (startx, starty, endx, endy, chars, edited) {
         })
         chooseedited.push(cedit)
       } else if (i === rightx) {
-        choosetxt += chars[i].slice(0, rightx)
+        choosetxt += getlinetxt(chars[i]).slice(0, rightx)
         cedit = edited[i].slice(1, rightx + 1)
         left = edited[i][0]
         cedit = cedit.map((item) => {
@@ -151,7 +159,7 @@ export function getChoosedContent (startx, starty, endx, endy, chars, edited) {
         })
         chooseedited.push(cedit)
       } else {
-        choosetxt += chars[i] + '\n'
+        choosetxt += getlinetxt(chars[i]) + '\n'
         cedit = edited[i].slice(1)
         chooseedited.push(cedit)
       }
@@ -191,11 +199,11 @@ export function clearchoosedCon (oldx, oldy, newx, newy, edited, chars) {
           return item - edited[i][rightx] + edited[i][leftx]
         })
         let insert = leftedit.concat(lastedit)
-        let lasttxt = leftx - 1 >= 0 ? chars[i].slice(0, leftx) : ''
-        lasttxt += chars[i].slice(rightx)
+        let lasttxt = leftx - 1 >= 0 ? chars[i][0].val.slice(0, leftx) : ''
+        lasttxt += chars[i][0].val.slice(rightx)
         if (insert.length > 1) {
           edited.splice(i, 1, insert)
-          chars.splice(i, 1, lasttxt)
+          chars[i][0].val = lasttxt
         } else {
           edited.splice(i, 1)
           chars.splice(i, 1)
@@ -203,10 +211,10 @@ export function clearchoosedCon (oldx, oldy, newx, newy, edited, chars) {
         }
       } else {
         let lastedit = edited[i].slice(0, leftx + 1)
-        let lasttxt = leftx - 1 >= 0 ? chars[i].slice(0, leftx) : ''
+        let lasttxt = leftx - 1 >= 0 ? chars[i][0].val.slice(0, leftx) : ''
         if (lastedit.length > 1) {
           edited.splice(i, 1, lastedit)
-          chars.splice(i, 1, lasttxt)
+          chars[i][0].val = lasttxt
         } else {
           edited.splice(i, 1)
           chars.splice(i, 1)
@@ -215,14 +223,14 @@ export function clearchoosedCon (oldx, oldy, newx, newy, edited, chars) {
       }
     } else if (i === righty) {
       let lastedit = edited[i - dellen].slice(rightx + 1)
-      let lasttxt = chars[i - dellen].slice(rightx)
+      let lasttxt = chars[i - dellen][0].val.slice(rightx)
       lastedit = lastedit.map((item) => {
         return item - edited[i - dellen][rightx]
       })
       lastedit.unshift(0)
       if (lastedit.length > 1) {
         edited.splice(i - dellen, 1, lastedit)
-        chars.splice(i - dellen, 1, lasttxt)
+        chars[i - dellen][0].val = lasttxt
       } else {
         edited.splice(i - dellen, 1)
         chars.splice(i - dellen, 1)
@@ -238,18 +246,19 @@ export function clearchoosedCon (oldx, oldy, newx, newy, edited, chars) {
 }
 
 export function pasteText (copyX, copyY, copychar, chars, copyedited, edited) {
+  mergelinetxt(chars)
   let copyH = copyedited.length
   let lastcon = edited[copyY].slice(copyX + 1)
   let uaddlen = edited[copyY][copyX]
   lastcon = lastcon.map((item) => {
     return item - uaddlen
   })
-  let lasttxt = chars[copyY].slice(copyX)
+  let lasttxt = chars[copyY][0].val.slice(copyX)
   edited.splice(copyY, 1, edited[copyY].slice(0, copyX + 1))
-  chars.splice(copyY, 1, chars[copyY].slice(0, copyX))
+  chars[copyY][0].val = chars[copyY][0].val.slice(0, copyX)
   for (let i = 0; i < copyH - 1; i++) {
     edited.splice(copyY + 1, 0, [])
-    chars.splice(copyY + 1, 0, '')
+    chars.splice(copyY + 1, 0, [ { type: 'normal', val: '' } ])
   }
   for (let j = copyY; j < copyY + copyH; j++) {
     let addlen = edited[j].slice(-1)[0]
@@ -257,7 +266,7 @@ export function pasteText (copyX, copyY, copychar, chars, copyedited, edited) {
       return item + addlen
     })
     let insertedit = edited[j].concat(copyedited[j - copyY])
-    let inserttxt = chars[j] + copychar[j - copyY]
+    let inserttxt = chars[j][0].val + copychar[j - copyY]
     if (j === copyY + copyH - 1) {
       inserttxt = inserttxt + lasttxt
       addlen = insertedit.slice(-1)[0]
@@ -266,7 +275,20 @@ export function pasteText (copyX, copyY, copychar, chars, copyedited, edited) {
       })
       insertedit = insertedit.concat(lastcon)
     }
-    chars.splice(j, 1, inserttxt)
+    chars[j][0].val = inserttxt
     edited.splice(j, 1, insertedit)
+  }
+}
+
+export function mergelinetxt (chars) {
+  for (let i = 0; i < chars.length; i++) {
+    let val = ''
+    let obj = {}
+    chars[i].forEach((item) => {
+      val += item.val
+    })
+    obj.val = val
+    obj.type = 'normal'
+    chars.splice(i, 1, [obj])
   }
 }

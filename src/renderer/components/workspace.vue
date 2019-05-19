@@ -20,7 +20,7 @@
 </template>
 
 <script>
-  import editArea from './editArea'
+  import editArea from './editComponent/editArea'
   import { ipcRenderer } from 'electron'
   import markdown from 'markdown'
 
@@ -69,7 +69,6 @@
         this.$store.commit('changemesname', data)
       })
       ipcRenderer.on('getHtml', (event, mess) => {
-        console.log('12')
         if (!this.preview) {
           this.preview = true
           this.previewWid = 0.5

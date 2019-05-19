@@ -1,8 +1,8 @@
 const babel = require('babel-core')
 
 export function jsAst (code) {
-  console.log(babel.transform(code).ast)
-  return babel.transform(code).ast
+  let ast = babel.transform(code).ast
+  return ast
 }
 
 export function getAst (code, type) {
